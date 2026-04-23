@@ -7,16 +7,16 @@ const SALARY_RANGES = ['ไม่ระบุ', 'น้อยกว่า 15,000
 
 export default function App() {
   // ----------------------------------------------------------------------
-  // 🔐 State สำหรับระบบ Login
+  // 🔐 State สำหรับระบบ Login (เปลี่ยนจาก email เป็น username)
   // ----------------------------------------------------------------------
   const [session, setSession] = useState(null);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState(''); // 👈 เปลี่ยนเป็น username
   const [password, setPassword] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState('');
 
   // ----------------------------------------------------------------------
-  // 📊 State เดิมของ App (ข้อมูล, ค้นหา, โหลด)
+  // 📊 State เดิมของ App
   // ----------------------------------------------------------------------
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,9 +40,6 @@ export default function App() {
     setTimeout(() => setToast({ show: false, message, type: 'success' }), 3000);
   };
 
-  // ----------------------------------------------------------------------
-  // 🔐 ตรวจสอบสถานะการ Login ตอนเปิดเว็บ
-  // ----------------------------------------------------------------------
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -57,55 +54,53 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ดึงข้อมูล Database เมื่อ Login สำเร็จแล้วเท่านั้น
   useEffect(() => {
-    if (session) {
-      fetchJobs();
-    }
+    if (session) fetchJobs();
   }, [session]);
 
-  // 🔐 ฟังก์ชัน Login
+  // ----------------------------------------------------------------------
+  // 🔐 ฟังก์ชัน Login ด้วย Username
+  // ----------------------------------------------------------------------
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       setIsAuthLoading(true);
       setAuthError('');
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      // 💡 ทริค Senior: แอบเติม @app.com ต่อท้ายชื่อที่พิมพ์เข้ามา
+      const fakeEmail = `${username}@app.com`;
+      
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: fakeEmail, // ส่งอีเมลหลอกๆ ให้ Supabase
+        password 
+      });
+
       if (error) throw error;
       showToast('เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับครับ 🎉', 'success');
     } catch (error) {
-      setAuthError('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่');
+      setAuthError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่');
     } finally {
       setIsAuthLoading(false);
     }
   };
 
-  // 🔐 ฟังก์ชัน Logout
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (!error) {
-      setJobs([]); // เคลียร์ข้อมูลทิ้งจากหน้าจอเพื่อความปลอดภัย
+      setJobs([]); 
       setSession(null);
       showToast('ออกจากระบบเรียบร้อยแล้ว 👋', 'success');
     }
   };
 
-  // ----------------------------------------------------------------------
-  // ☁️ ฟังก์ชันจัดการข้อมูล (CRUD)
-  // ----------------------------------------------------------------------
   const fetchJobs = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await supabase.from('jobs').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setJobs(data || []);
     } catch (error) {
       showToast('ดึงข้อมูลล้มเหลว กรุณาลองใหม่', 'error');
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -132,14 +127,12 @@ export default function App() {
         if (error) throw error;
         showToast('เพิ่มประวัติลง Cloud เรียบร้อย! 🚀');
       }
-      
       setFormData(initialForm);
       setIsEditing(false);
       setEditId(null);
       fetchJobs(); 
     } catch (error) {
       showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
-      console.error(error);
     }
   };
 
@@ -155,7 +148,6 @@ export default function App() {
       try {
         const { error } = await supabase.from('jobs').delete().eq('id', itemToDelete);
         if (error) throw error;
-        
         if (isEditing && editId === itemToDelete) {
           setIsEditing(false);
           setFormData(initialForm);
@@ -165,7 +157,6 @@ export default function App() {
         fetchJobs();
       } catch (error) {
         showToast('เกิดข้อผิดพลาดในการลบ', 'error');
-        console.error(error);
       }
     }
   };
@@ -174,10 +165,8 @@ export default function App() {
     try {
       const { error } = await supabase.from('jobs').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
-
       if(newStatus === 'ได้รับ Offer') showToast('ยินดีด้วยครับ! ได้รับ Offer แล้ว 🎉', 'success');
       else showToast(`อัปเดตสถานะเป็น ${newStatus} แล้ว`, 'success');
-      
       fetchJobs();
     } catch (error) {
       showToast('อัปเดตสถานะล้มเหลว', 'error');
@@ -191,11 +180,9 @@ export default function App() {
       const matchStatus = filterStatus === 'All' || job.status === filterStatus;
       return matchSearch && matchStatus;
     });
-
     if (sortBy === 'newest') result.sort((a, b) => b.id - a.id);
     if (sortBy === 'oldest') result.sort((a, b) => a.id - b.id);
     if (sortBy === 'a-z') result.sort((a, b) => a.company.localeCompare(b.company));
-    
     return result;
   }, [jobs, searchTerm, filterStatus, sortBy]);
 
@@ -233,9 +220,6 @@ export default function App() {
     }
   };
 
-  // ----------------------------------------------------------------------
-  // ⏳ หน้าจอโหลดเช็คสถานะ
-  // ----------------------------------------------------------------------
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50 via-sky-100 to-cyan-100 flex items-center justify-center">
@@ -245,13 +229,12 @@ export default function App() {
   }
 
   // ----------------------------------------------------------------------
-  // 🚪 หน้าจอ Login (สำหรับคนยังไม่เข้าระบบ)
+  // 🚪 หน้าจอ Login (เปลี่ยนช่อง Email เป็น Username)
   // ----------------------------------------------------------------------
   if (!session) {
     return (
       <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50 via-sky-100 to-cyan-100 flex items-center justify-center p-4 font-sans selection:bg-sky-200 selection:text-sky-900">
         
-        {/* Toast แจ้งเตือนของหน้า Login */}
         <div className={`fixed top-5 right-5 z-50 transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
           <div className={`px-6 py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.5)] border flex items-center gap-3 backdrop-blur-md ${toast.type === 'error' ? 'bg-gradient-to-b from-rose-50/90 to-rose-100/90 border-rose-300 text-rose-800' : 'bg-gradient-to-b from-emerald-50/90 to-emerald-100/90 border-emerald-300 text-emerald-800'}`}>
             <span className="text-2xl drop-shadow-sm">{toast.type === 'error' ? '⚠️' : '✅'}</span>
@@ -277,12 +260,12 @@ export default function App() {
 
             <form onSubmit={handleLogin} className="space-y-5 text-left">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">อีเมลผู้ใช้งาน</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">ชื่อผู้ใช้งาน (Username)</label>
                 <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="your@email.com"
+                  type="text" 
+                  value={username} 
+                  onChange={(e) => setUsername(e.target.value)} 
+                  placeholder="เช่น admin"
                   className="w-full p-3.5 bg-slate-50 border border-slate-300 shadow-inner rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none transition-all text-sm font-medium" 
                   required 
                 />
@@ -313,12 +296,11 @@ export default function App() {
   }
 
   // ----------------------------------------------------------------------
-  // 🌟 หน้า Dashboard หลัก (แสดงเฉพาะตอน Login แล้วเท่านั้น)
+  // 🌟 หน้า Dashboard หลัก
   // ----------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50 via-sky-100 to-cyan-100 p-4 md:p-8 font-sans pb-20 text-slate-800 selection:bg-sky-200 selection:text-sky-900 relative overflow-hidden">
       
-      {/* Modal ยืนยันการลบ */}
       {itemToDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-[0_10px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,1)] border border-slate-200">
@@ -333,7 +315,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Toast แจ้งเตือน */}
       <div className={`fixed top-5 right-5 z-50 transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
         <div className={`px-6 py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.5)] border flex items-center gap-3 backdrop-blur-md ${toast.type === 'error' ? 'bg-gradient-to-b from-rose-50/90 to-rose-100/90 border-rose-300 text-rose-800' : 'bg-gradient-to-b from-emerald-50/90 to-emerald-100/90 border-emerald-300 text-emerald-800'}`}>
           <span className="text-2xl drop-shadow-sm">{toast.type === 'error' ? '⚠️' : '✅'}</span>
@@ -342,8 +323,6 @@ export default function App() {
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        
-        {/* Header และปุ่ม Logout */}
         <div className="mb-10 flex flex-col md:flex-row justify-between items-center md:items-end gap-5">
           <div className="text-center md:text-left">
             <h1 className="text-4xl md:text-5xl font-extrabold mb-3 tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
@@ -381,7 +360,6 @@ export default function App() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
           <div className="lg:col-span-4">
             <div className="bg-white/90 backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,1)] border border-slate-200/80 sticky top-8">
               <h2 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2 drop-shadow-sm">
@@ -467,7 +445,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* แสดงสถานะกำลังโหลด */}
             {isLoading && jobs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-sky-500 mb-4 shadow-sm"></div>
