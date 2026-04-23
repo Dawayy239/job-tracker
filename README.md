@@ -19,7 +19,7 @@
 ## 🚀 วิธีการติดตั้งและรันโปรเจกต์ในเครื่อง (Local Setup)
 
 1. Clone โปรเจกต์นี้ลงเครื่อง
-git clone [https://github.com/](https://github.com/)dawayy239/Job-Tracker.git
+git clone https://github.com/Dawayy239/job-tracker
 
 2.ติดตั้ง Dependencies
 npm install
