@@ -6,8 +6,20 @@ const WORK_MODES = ['On-site', 'Hybrid', 'Remote'];
 const SALARY_RANGES = ['ไม่ระบุ', 'น้อยกว่า 15,000 ฿', '15,000 - 18,000 ฿', '18,000 - 20,000 ฿', '20,000 - 25,000 ฿', '25,000 - 30,000 ฿', '30,000 - 35,000 ฿', '35,000 - 40,000 ฿', '40,000 - 45,000 ฿', '45,000 - 50,000 ฿', '50,000 - 60,000 ฿', '60,000 - 70,000 ฿', '70,000 - 80,000 ฿', '80,000 - 100,000 ฿', 'มากกว่า 100,000 ฿'];
 
 export default function App() {
+  // ----------------------------------------------------------------------
+  // 🔐 State สำหรับระบบ Login
+  // ----------------------------------------------------------------------
+  const [session, setSession] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState('');
+
+  // ----------------------------------------------------------------------
+  // 📊 State เดิมของ App (ข้อมูล, ค้นหา, โหลด)
+  // ----------------------------------------------------------------------
   const [jobs, setJobs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -28,6 +40,59 @@ export default function App() {
     setTimeout(() => setToast({ show: false, message, type: 'success' }), 3000);
   };
 
+  // ----------------------------------------------------------------------
+  // 🔐 ตรวจสอบสถานะการ Login ตอนเปิดเว็บ
+  // ----------------------------------------------------------------------
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ดึงข้อมูล Database เมื่อ Login สำเร็จแล้วเท่านั้น
+  useEffect(() => {
+    if (session) {
+      fetchJobs();
+    }
+  }, [session]);
+
+  // 🔐 ฟังก์ชัน Login
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      setIsAuthLoading(true);
+      setAuthError('');
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      showToast('เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับครับ 🎉', 'success');
+    } catch (error) {
+      setAuthError('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่');
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  // 🔐 ฟังก์ชัน Logout
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      setJobs([]); // เคลียร์ข้อมูลทิ้งจากหน้าจอเพื่อความปลอดภัย
+      setSession(null);
+      showToast('ออกจากระบบเรียบร้อยแล้ว 👋', 'success');
+    }
+  };
+
+  // ----------------------------------------------------------------------
+  // ☁️ ฟังก์ชันจัดการข้อมูล (CRUD)
+  // ----------------------------------------------------------------------
   const fetchJobs = async () => {
     try {
       setIsLoading(true);
@@ -45,10 +110,6 @@ export default function App() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -172,6 +233,88 @@ export default function App() {
     }
   };
 
+  // ----------------------------------------------------------------------
+  // ⏳ หน้าจอโหลดเช็คสถานะ
+  // ----------------------------------------------------------------------
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50 via-sky-100 to-cyan-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-sky-500 mb-4 shadow-sm"></div>
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------------
+  // 🚪 หน้าจอ Login (สำหรับคนยังไม่เข้าระบบ)
+  // ----------------------------------------------------------------------
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50 via-sky-100 to-cyan-100 flex items-center justify-center p-4 font-sans selection:bg-sky-200 selection:text-sky-900">
+        
+        {/* Toast แจ้งเตือนของหน้า Login */}
+        <div className={`fixed top-5 right-5 z-50 transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
+          <div className={`px-6 py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.5)] border flex items-center gap-3 backdrop-blur-md ${toast.type === 'error' ? 'bg-gradient-to-b from-rose-50/90 to-rose-100/90 border-rose-300 text-rose-800' : 'bg-gradient-to-b from-emerald-50/90 to-emerald-100/90 border-emerald-300 text-emerald-800'}`}>
+            <span className="text-2xl drop-shadow-sm">{toast.type === 'error' ? '⚠️' : '✅'}</span>
+            <p className="font-bold drop-shadow-sm">{toast.message}</p>
+          </div>
+        </div>
+
+        <div className="bg-white/90 backdrop-blur-xl p-8 md:p-10 rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,1)] border border-white/50 max-w-md w-full text-center relative overflow-hidden">
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-sky-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-teal-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+          
+          <div className="relative z-10">
+            <h1 className="text-4xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-b from-teal-700 to-blue-800 drop-shadow-sm">
+              Job Tracker <span className="text-3xl">🍏</span>
+            </h1>
+            <p className="text-slate-500 font-medium mb-8">กรุณาเข้าสู่ระบบเพื่อจัดการข้อมูลส่วนตัว</p>
+            
+            {authError && (
+              <div className="mb-6 p-3 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-sm font-bold animate-in fade-in slide-in-from-top-2">
+                ⚠️ {authError}
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-5 text-left">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">อีเมลผู้ใช้งาน</label>
+                <input 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  placeholder="your@email.com"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-300 shadow-inner rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none transition-all text-sm font-medium" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">รหัสผ่าน</label>
+                <input 
+                  type="password" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  placeholder="••••••••"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-300 shadow-inner rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none transition-all text-sm font-medium" 
+                  required 
+                />
+              </div>
+              <button 
+                type="submit" 
+                disabled={isAuthLoading} 
+                className="w-full mt-2 bg-gradient-to-b from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 border border-blue-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.1)] disabled:opacity-70 transition-all active:scale-[0.98]"
+              >
+                {isAuthLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ 🔐'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------------
+  // 🌟 หน้า Dashboard หลัก (แสดงเฉพาะตอน Login แล้วเท่านั้น)
+  // ----------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50 via-sky-100 to-cyan-100 p-4 md:p-8 font-sans pb-20 text-slate-800 selection:bg-sky-200 selection:text-sky-900 relative overflow-hidden">
       
@@ -199,14 +342,23 @@ export default function App() {
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="mb-10 text-center md:text-left flex justify-between items-end">
-          <div>
+        
+        {/* Header และปุ่ม Logout */}
+        <div className="mb-10 flex flex-col md:flex-row justify-between items-center md:items-end gap-5">
+          <div className="text-center md:text-left">
             <h1 className="text-4xl md:text-5xl font-extrabold mb-3 tracking-tight drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
               <span className="text-transparent bg-clip-text bg-gradient-to-b from-teal-700 to-blue-800">Job Tracker</span>
               <span className="ml-3 text-3xl drop-shadow-md">🍏</span>
             </h1>
             <p className="text-slate-600 font-medium text-sm md:text-base drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">จัดการและติดตามทุกสถานะการสมัครงาน</p>
           </div>
+          
+          <button 
+            onClick={handleLogout} 
+            className="px-5 py-2.5 bg-white/60 border border-slate-300 text-slate-600 font-bold rounded-full hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all shadow-sm flex items-center gap-2 backdrop-blur-sm"
+          >
+            <span>ออกจากระบบ</span> <span className="text-lg">🚪</span>
+          </button>
         </div>
           
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
