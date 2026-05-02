@@ -1,23 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase } from './supabaseClient'; // ต่อกับของจริง!
 
 const STATUS_OPTIONS = ['รอติดต่อกลับ', 'มีการติดต่อมา', 'ทำแบบทดสอบ', 'นัดสัมภาษณ์', 'ได้รับ Offer', 'ปฏิเสธ Offer', 'ไม่ผ่าน'];
 const WORK_MODES = ['On-site', 'Hybrid', 'Remote'];
 const SALARY_RANGES = ['ไม่ระบุ', 'น้อยกว่า 15,000 ฿', '15,000 - 18,000 ฿', '18,000 - 20,000 ฿', '20,000 - 25,000 ฿', '25,000 - 30,000 ฿', '30,000 - 35,000 ฿', '35,000 - 40,000 ฿', '40,000 - 45,000 ฿', '45,000 - 50,000 ฿', '50,000 - 60,000 ฿', '60,000 - 70,000 ฿', '70,000 - 80,000 ฿', '80,000 - 100,000 ฿', 'มากกว่า 100,000 ฿'];
 
 export default function App() {
-  // ----------------------------------------------------------------------
-  // 🔐 State สำหรับระบบ Login (เปลี่ยนจาก email เป็น username)
-  // ----------------------------------------------------------------------
+  // 🔐 State สำหรับ Auth
   const [session, setSession] = useState(null);
-  const [username, setUsername] = useState(''); // 👈 เปลี่ยนเป็น username
+  const [isLoginMode, setIsLoginMode] = useState(true); 
+  const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState('');
 
-  // ----------------------------------------------------------------------
-  // 📊 State เดิมของ App
-  // ----------------------------------------------------------------------
+  // 📊 State สำหรับข้อมูล Jobs
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +37,7 @@ export default function App() {
     setTimeout(() => setToast({ show: false, message, type: 'success' }), 3000);
   };
 
+  // เช็คสถานะตอนเปิดเว็บ
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -54,31 +52,42 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // ดึงข้อมูลเมื่อ Login ผ่าน
   useEffect(() => {
     if (session) fetchJobs();
   }, [session]);
 
   // ----------------------------------------------------------------------
-  // 🔐 ฟังก์ชัน Login ด้วย Username
+  // 🔐 ระบบ Login & Sign Up
   // ----------------------------------------------------------------------
-  const handleLogin = async (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
+    if(username.length < 3) {
+      setAuthError('ชื่อผู้ใช้งานต้องมีความยาวอย่างน้อย 3 ตัวอักษร');
+      return;
+    }
+    if(password.length < 6) {
+      setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+      return;
+    }
+
     try {
       setIsAuthLoading(true);
       setAuthError('');
       
-      // 💡 ทริค Senior: แอบเติม @app.com ต่อท้ายชื่อที่พิมพ์เข้ามา
       const fakeEmail = `${username}@app.com`;
       
-      const { error } = await supabase.auth.signInWithPassword({ 
-        email: fakeEmail, // ส่งอีเมลหลอกๆ ให้ Supabase
-        password 
-      });
-
-      if (error) throw error;
-      showToast('เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับครับ 🎉', 'success');
+      if (isLoginMode) {
+        const { error } = await supabase.auth.signInWithPassword({ email: fakeEmail, password });
+        if (error) throw error;
+        showToast('เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับครับ 🎉', 'success');
+      } else {
+        const { error } = await supabase.auth.signUp({ email: fakeEmail, password });
+        if (error) throw error;
+        showToast('สมัครสมาชิกสำเร็จ! เข้าสู่ระบบได้เลย 🚀', 'success');
+      }
     } catch (error) {
-      setAuthError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่');
+      setAuthError(isLoginMode ? 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' : 'เกิดข้อผิดพลาดในการสมัครสมาชิก (อาจมีชื่อนี้อยู่แล้ว)');
     } finally {
       setIsAuthLoading(false);
     }
@@ -93,10 +102,17 @@ export default function App() {
     }
   };
 
+  // ----------------------------------------------------------------------
+  // ☁️ CRUD Database
+  // ----------------------------------------------------------------------
   const fetchJobs = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.from('jobs').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('updated_at', { ascending: false }); 
+
       if (error) throw error;
       setJobs(data || []);
     } catch (error) {
@@ -119,20 +135,27 @@ export default function App() {
 
     try {
       if (isEditing) {
-        const { error } = await supabase.from('jobs').update(formData).eq('id', editId);
+        // 💡 Senior Trick: คัดฟิลด์ที่ Database จัดการเองออกไปก่อนส่ง Update
+        const { id, created_at, user_id, ...updateData } = formData;
+        updateData.updated_at = new Date().toISOString(); 
+        
+        const { error } = await supabase.from('jobs').update(updateData).eq('id', editId);
         if (error) throw error;
         showToast('อัปเดตข้อมูลสำเร็จ! ✨');
       } else {
+        // ตอน Insert ไม่ต้องส่ง user_id เพราะ Supabase จะใส่ UID ของคนที่ Login ให้เองตามกฎที่เราตั้งไว้!
         const { error } = await supabase.from('jobs').insert([formData]);
         if (error) throw error;
         showToast('เพิ่มประวัติลง Cloud เรียบร้อย! 🚀');
       }
+      
       setFormData(initialForm);
       setIsEditing(false);
       setEditId(null);
       fetchJobs(); 
     } catch (error) {
       showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+      console.error(error);
     }
   };
 
@@ -163,10 +186,16 @@ export default function App() {
 
   const handleQuickStatusChange = async (id, newStatus) => {
     try {
-      const { error } = await supabase.from('jobs').update({ status: newStatus }).eq('id', id);
+      const { error } = await supabase.from('jobs').update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString() 
+      }).eq('id', id);
+      
       if (error) throw error;
+
       if(newStatus === 'ได้รับ Offer') showToast('ยินดีด้วยครับ! ได้รับ Offer แล้ว 🎉', 'success');
       else showToast(`อัปเดตสถานะเป็น ${newStatus} แล้ว`, 'success');
+      
       fetchJobs();
     } catch (error) {
       showToast('อัปเดตสถานะล้มเหลว', 'error');
@@ -180,9 +209,11 @@ export default function App() {
       const matchStatus = filterStatus === 'All' || job.status === filterStatus;
       return matchSearch && matchStatus;
     });
-    if (sortBy === 'newest') result.sort((a, b) => b.id - a.id);
-    if (sortBy === 'oldest') result.sort((a, b) => a.id - b.id);
+    
+    if (sortBy === 'newest') result.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
+    if (sortBy === 'oldest') result.sort((a, b) => new Date(a.updated_at || a.created_at) - new Date(b.updated_at || b.created_at));
     if (sortBy === 'a-z') result.sort((a, b) => a.company.localeCompare(b.company));
+    
     return result;
   }, [jobs, searchTerm, filterStatus, sortBy]);
 
@@ -229,12 +260,11 @@ export default function App() {
   }
 
   // ----------------------------------------------------------------------
-  // 🚪 หน้าจอ Login (เปลี่ยนช่อง Email เป็น Username)
+  // 🚪 หน้าจอ Login & Sign Up
   // ----------------------------------------------------------------------
   if (!session) {
     return (
       <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50 via-sky-100 to-cyan-100 flex items-center justify-center p-4 font-sans selection:bg-sky-200 selection:text-sky-900">
-        
         <div className={`fixed top-5 right-5 z-50 transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
           <div className={`px-6 py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.5)] border flex items-center gap-3 backdrop-blur-md ${toast.type === 'error' ? 'bg-gradient-to-b from-rose-50/90 to-rose-100/90 border-rose-300 text-rose-800' : 'bg-gradient-to-b from-emerald-50/90 to-emerald-100/90 border-emerald-300 text-emerald-800'}`}>
             <span className="text-2xl drop-shadow-sm">{toast.type === 'error' ? '⚠️' : '✅'}</span>
@@ -250,7 +280,9 @@ export default function App() {
             <h1 className="text-4xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-b from-teal-700 to-blue-800 drop-shadow-sm">
               Job Tracker <span className="text-3xl">🍏</span>
             </h1>
-            <p className="text-slate-500 font-medium mb-8">กรุณาเข้าสู่ระบบเพื่อจัดการข้อมูลส่วนตัว</p>
+            <p className="text-slate-500 font-medium mb-6">
+              {isLoginMode ? 'เข้าสู่ระบบเพื่อจัดการข้อมูลของคุณ' : 'สร้างบัญชีใหม่เพื่อเริ่มต้นใช้งาน'}
+            </p>
             
             {authError && (
               <div className="mb-6 p-3 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-sm font-bold animate-in fade-in slide-in-from-top-2">
@@ -258,25 +290,25 @@ export default function App() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-5 text-left">
+            <form onSubmit={handleAuth} className="space-y-4 text-left">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">ชื่อผู้ใช้งาน (Username)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">ชื่อผู้ใช้งาน (Username)</label>
                 <input 
                   type="text" 
                   value={username} 
                   onChange={(e) => setUsername(e.target.value)} 
-                  placeholder="เช่น admin"
+                  placeholder="ความยาวอย่างน้อย 3 ตัวอักษร"
                   className="w-full p-3.5 bg-slate-50 border border-slate-300 shadow-inner rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none transition-all text-sm font-medium" 
                   required 
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">รหัสผ่าน</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">รหัสผ่าน</label>
                 <input 
                   type="password" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="••••••••"
+                  placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
                   className="w-full p-3.5 bg-slate-50 border border-slate-300 shadow-inner rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-400 outline-none transition-all text-sm font-medium" 
                   required 
                 />
@@ -284,11 +316,24 @@ export default function App() {
               <button 
                 type="submit" 
                 disabled={isAuthLoading} 
-                className="w-full mt-2 bg-gradient-to-b from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 border border-blue-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.1)] disabled:opacity-70 transition-all active:scale-[0.98]"
+                className="w-full mt-4 bg-gradient-to-b from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 border border-blue-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.1)] disabled:opacity-70 transition-all active:scale-[0.98]"
               >
-                {isAuthLoading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ 🔐'}
+                {isAuthLoading ? 'กำลังประมวลผล...' : (isLoginMode ? 'เข้าสู่ระบบ 🔐' : 'สร้างบัญชีใหม่ ✨')}
               </button>
             </form>
+
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <p className="text-sm text-slate-500 font-medium">
+                {isLoginMode ? 'ยังไม่มีบัญชีใช่ไหม?' : 'มีบัญชีอยู่แล้ว?'}
+                <button 
+                  type="button"
+                  onClick={() => { setIsLoginMode(!isLoginMode); setAuthError(''); }}
+                  className="ml-2 text-sky-600 font-bold hover:text-sky-700 transition-colors"
+                >
+                  {isLoginMode ? 'สมัครสมาชิกที่นี่' : 'เข้าสู่ระบบ'}
+                </button>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -329,7 +374,9 @@ export default function App() {
               <span className="text-transparent bg-clip-text bg-gradient-to-b from-teal-700 to-blue-800">Job Tracker</span>
               <span className="ml-3 text-3xl drop-shadow-md">🍏</span>
             </h1>
-            <p className="text-slate-600 font-medium text-sm md:text-base drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">จัดการและติดตามทุกสถานะการสมัครงาน</p>
+            <p className="text-slate-600 font-medium text-sm md:text-base drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+              จัดการและติดตามทุกสถานะการสมัครงาน <span className="px-2 py-1 bg-sky-200 text-sky-800 rounded-lg text-xs ml-2 font-bold shadow-sm">@{session.user?.email?.split('@')[0] || 'User'}</span>
+            </p>
           </div>
           
           <button 
