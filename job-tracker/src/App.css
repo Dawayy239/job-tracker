@@ -906,22 +906,35 @@ body {
 
   /* Mobile Stats */
   .xp-mobile-stats {
-    gap: 6px;
+    gap: 4px;
     margin-bottom: 10px;
   }
 
   .xp-mobile-stat {
-    padding: 10px 4px;
+    padding: 8px 2px;
+    word-break: break-word;
   }
 
   .xp-mobile-stat-value {
-    font-size: 22px;
+    font-size: 16px;
   }
 
   .xp-mobile-stat-label {
     font-size: 10px;
+    letter-spacing: -0.5px;
   }
 
+  .xp-input[type="date"] {
+    -webkit-appearance: none; /* ปิดสไตล์พื้นฐานของ Apple ที่ชอบกวนใจ */
+    appearance: none;
+    text-align: left; /* บังคับชิดซ้ายเสมอ */
+    display: block; /* บังคับให้กินพื้นที่พอดีกรอบ */
+    width: 100%;
+    min-height: 44px;
+    background-color: white;
+    font-family: var(--xp-font); /* บังคับใช้ฟอนต์ Tahoma/XP */
+  }
+  
   /* Mobile Taskbar */
   .xp-taskbar {
     height: 44px;
