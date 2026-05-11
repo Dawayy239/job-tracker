@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import XPClassicIcons from './XPClassicIcons';
 import './App.css';
 
 const STATUS_OPTIONS = ['รอติดต่อกลับ', 'มีการติดต่อมา', 'ทำแบบทดสอบ', 'นัดสัมภาษณ์', 'ได้รับ Offer', 'ปฏิเสธ Offer', 'ไม่ผ่าน'];
@@ -140,7 +141,7 @@ const XPWindow = ({ title, icon, menuBar, disableResize, children, width = 600, 
       <div className="xp-window-content xp-scroll">
         {children}
       </div>
-      
+
       {!isMaximized && !isMobile && !disableResize && (
         <div
           className="xp-resize-handle"
@@ -177,18 +178,18 @@ const XPBalloon = ({ title, message, onClose }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         <div style={{
-          width: '16px', height: '16px', borderRadius: '50%', background: '#0054E3', 
+          width: '16px', height: '16px', borderRadius: '50%', background: '#0054E3',
           color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontWeight: 'bold', fontSize: '12px', fontStyle: 'italic', fontFamily: 'serif'
         }}>i</div>
         <strong style={{ fontSize: '13px', color: '#000000' }}>{title}</strong>
       </div>
-      <button 
+      <button
         onClick={onClose}
-        style={{ 
-          background: 'transparent', border: '1px solid #000', borderRadius: '2px', 
-          width: '14px', height: '14px', display: 'flex', alignItems: 'center', 
-          justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', 
+        style={{
+          background: 'transparent', border: '1px solid #000', borderRadius: '2px',
+          width: '14px', height: '14px', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: '10px', fontWeight: 'bold',
           cursor: 'pointer', padding: 0, marginLeft: '10px', color: '#000'
         }}
       >×</button>
@@ -607,9 +608,13 @@ export default function App() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
-    // Center the pop-up windows initially
+    // Center the pop-up windows and main window initially
     setWindowPositions(prev => ({
       ...prev,
+      main: {
+        x: Math.max(20, (window.innerWidth - 600) / 2), // assuming default width 600
+        y: Math.max(20, (window.innerHeight - 500) / 2)
+      },
       addJob: { x: Math.max(20, (window.innerWidth - 480) / 2), y: Math.max(20, (window.innerHeight - 500) / 2) },
       stats: { x: Math.max(20, (window.innerWidth - 400) / 2), y: Math.max(20, (window.innerHeight - 400) / 2) }
     }));
@@ -865,7 +870,7 @@ export default function App() {
               <div className="xp-welcome-user-info">
                 <div className="xp-welcome-user-name">{isLoginMode ? 'User' : 'New Account'}</div>
 
-                <form onSubmit={handleAuth} style={{ display: 'flex', gap: '8px', width: '100%', alignItems: 'center' }}>
+                <form onSubmit={handleAuth} className="xp-welcome-form">
                   <input
                     type="text"
                     value={username}
@@ -875,17 +880,19 @@ export default function App() {
                     required
                     autoFocus
                   />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Password"
-                    className="xp-welcome-input"
-                    required
-                  />
-                  <button type="submit" disabled={isAuthLoading} className="xp-welcome-btn-primary" title={isLoginMode ? 'เข้าสู่ระบบ' : 'สร้างบัญชี'}>
-                    →
-                  </button>
+                  <div className="xp-welcome-password-row">
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Password"
+                      className="xp-welcome-input"
+                      required
+                    />
+                    <button type="submit" disabled={isAuthLoading} className="xp-welcome-btn-primary" title={isLoginMode ? 'เข้าสู่ระบบ' : 'สร้างบัญชี'}>
+                      →
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
@@ -962,241 +969,241 @@ export default function App() {
       {isMobile ? (
         <div className="xp-mobile-container">
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          {/* Mobile Stats */}
-          <XPWindow
-            title="Statistics"
-            icon="📊"
-            windowId="stats"
-            isMobile={isMobile}
-            windowPositions={windowPositions}
-            activeWindow={activeWindow}
-            onMouseDown={handleMouseDown}
-            winState={windows['stats']}
-            onClose={() => closeWindow('stats')}
-          >
-            <div style={{ paddingBottom: '80px' }}>
-              <div className="xp-mobile-stats">
-                <div className="xp-mobile-stat">
-                  <span className="xp-mobile-stat-value">{stats.total}</span>
-                <span className="xp-mobile-stat-label">ทั้งหมด</span>
-              </div>
-              <div className="xp-mobile-stat">
-                <span className="xp-mobile-stat-value" style={{ color: '#0066CC' }}>{stats.interview}</span>
-                <span className="xp-mobile-stat-label">สัมภาษณ์</span>
-              </div>
-              <div className="xp-mobile-stat">
-                <span className="xp-mobile-stat-value" style={{ color: '#1B5E20' }}>{stats.offer}</span>
-                <span className="xp-mobile-stat-label">Offer</span>
-              </div>
-              <div className="xp-mobile-stat">
-                <span className="xp-mobile-stat-value" style={{ color: '#C00000' }}>{stats.rejected}</span>
-                <span className="xp-mobile-stat-label">ไม่ผ่าน</span>
-              </div>
-            </div>
-            {/* Status breakdown */}
-            <div className="xp-groupbox" style={{ marginTop: '12px' }}>
-              <div className="xp-groupbox-title">สถานะทั้งหมด</div>
-              {STATUS_OPTIONS.map(s => {
-                const count = jobs.filter(j => j.status === s).length;
-                return (
-                  <div key={s} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: '11px', borderBottom: '1px solid #F0F0F0' }}>
-                    <span className={`xp-badge ${STATUS_BADGES[s]}`}>{s}</span>
-                    <span style={{ fontWeight: 'bold' }}>{count}</span>
+            {/* Mobile Stats */}
+            <XPWindow
+              title="Statistics"
+              icon="📊"
+              windowId="stats"
+              isMobile={isMobile}
+              windowPositions={windowPositions}
+              activeWindow={activeWindow}
+              onMouseDown={handleMouseDown}
+              winState={windows['stats']}
+              onClose={() => closeWindow('stats')}
+            >
+              <div style={{ paddingBottom: '80px' }}>
+                <div className="xp-mobile-stats">
+                  <div className="xp-mobile-stat">
+                    <span className="xp-mobile-stat-value">{stats.total}</span>
+                    <span className="xp-mobile-stat-label">ทั้งหมด</span>
                   </div>
-                );
-              })}
-            </div>
-            </div>
-          </XPWindow>
-
-          {/* Mobile Form */}
-          <XPWindow
-            title={isEditing ? "Edit Job" : "Add New Job"}
-            icon={isEditing ? "✏️" : "✨"}
-            windowId="addJob"
-            isMobile={isMobile}
-            windowPositions={windowPositions}
-            activeWindow={activeWindow}
-            onMouseDown={handleMouseDown}
-            winState={windows['addJob']}
-            onClose={() => { closeWindow('addJob'); setIsEditing(false); setFormData(initialForm); }}
-          >
-            <div className="xp-form-container">
-              <form onSubmit={(e) => { handleSubmit(e); closeWindow('addJob'); }} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div className="xp-groupbox">
-                  <div className="xp-groupbox-title">ข้อมูลบริษัท</div>
-                  <div className="xp-mb-1">
-                    <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>ชื่อบริษัท *</label>
-                    <input type="text" name="company" value={formData.company} onChange={handleChange} className="xp-input xp-w-full" placeholder="เช่น Google, Agoda" required />
+                  <div className="xp-mobile-stat">
+                    <span className="xp-mobile-stat-value" style={{ color: '#0066CC' }}>{stats.interview}</span>
+                    <span className="xp-mobile-stat-label">สัมภาษณ์</span>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>ตำแหน่งที่สมัคร *</label>
-                    <input type="text" name="position" value={formData.position} onChange={handleChange} className="xp-input xp-w-full" placeholder="เช่น Senior Frontend" required />
+                  <div className="xp-mobile-stat">
+                    <span className="xp-mobile-stat-value" style={{ color: '#1B5E20' }}>{stats.offer}</span>
+                    <span className="xp-mobile-stat-label">Offer</span>
+                  </div>
+                  <div className="xp-mobile-stat">
+                    <span className="xp-mobile-stat-value" style={{ color: '#C00000' }}>{stats.rejected}</span>
+                    <span className="xp-mobile-stat-label">ไม่ผ่าน</span>
                   </div>
                 </div>
+                {/* Status breakdown */}
+                <div className="xp-groupbox" style={{ marginTop: '12px' }}>
+                  <div className="xp-groupbox-title">สถานะทั้งหมด</div>
+                  {STATUS_OPTIONS.map(s => {
+                    const count = jobs.filter(j => j.status === s).length;
+                    return (
+                      <div key={s} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: '11px', borderBottom: '1px solid #F0F0F0' }}>
+                        <span className={`xp-badge ${STATUS_BADGES[s]}`}>{s}</span>
+                        <span style={{ fontWeight: 'bold' }}>{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </XPWindow>
 
-                <div className="xp-grid-2">
-                  <div className="xp-groupbox" style={{ margin: 0 }}>
-                    <div className="xp-groupbox-title">สถานะ & รูปแบบ</div>
+            {/* Mobile Form */}
+            <XPWindow
+              title={isEditing ? "Edit Job" : "Add New Job"}
+              icon={isEditing ? "✏️" : "✨"}
+              windowId="addJob"
+              isMobile={isMobile}
+              windowPositions={windowPositions}
+              activeWindow={activeWindow}
+              onMouseDown={handleMouseDown}
+              winState={windows['addJob']}
+              onClose={() => { closeWindow('addJob'); setIsEditing(false); setFormData(initialForm); }}
+            >
+              <div className="xp-form-container">
+                <form onSubmit={(e) => { handleSubmit(e); closeWindow('addJob'); }} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div className="xp-groupbox">
+                    <div className="xp-groupbox-title">ข้อมูลบริษัท</div>
                     <div className="xp-mb-1">
-                      <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>สถานะ</label>
-                      <select name="status" value={formData.status} onChange={handleChange} className="xp-select xp-w-full">
-                        {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>ชื่อบริษัท *</label>
+                      <input type="text" name="company" value={formData.company} onChange={handleChange} className="xp-input xp-w-full" placeholder="เช่น Google, Agoda" required />
                     </div>
                     <div>
-                      <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>รูปแบบงาน</label>
-                      <select name="workMode" value={formData.workMode} onChange={handleChange} className="xp-select xp-w-full">
-                        {WORK_MODES.map(m => <option key={m} value={m}>{m}</option>)}
-                      </select>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>ตำแหน่งที่สมัคร *</label>
+                      <input type="text" name="position" value={formData.position} onChange={handleChange} className="xp-input xp-w-full" placeholder="เช่น Senior Frontend" required />
                     </div>
                   </div>
 
-                  <div className="xp-groupbox" style={{ margin: 0 }}>
-                    <div className="xp-groupbox-title">รายละเอียด</div>
-                    <div className="xp-mb-1">
-                      <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>เงินเดือน</label>
-                      <select name="salary" value={formData.salary} onChange={handleChange} className="xp-select xp-w-full">
-                        {SALARY_RANGES.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>วันที่สมัคร</label>
-                      <input type="date" name="date" value={formData.date} onChange={handleChange} className="xp-input xp-w-full" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="xp-groupbox">
-                  <div className="xp-groupbox-title">ข้อมูลเพิ่มเติม</div>
-                  <div className="xp-mb-1">
-                    <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>ลิงก์ประกาศงาน</label>
-                    <input type="url" name="link" value={formData.link || ''} onChange={handleChange} className="xp-input xp-w-full" placeholder="https://..." />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>บันทึกเพิ่มเติม</label>
-                    <textarea name="notes" value={formData.notes || ''} onChange={handleChange} placeholder="เทคโนโลยีที่ใช้, คำถามที่เจอ..." rows="3" className="xp-textarea xp-w-full"></textarea>
-                  </div>
-                </div>
-
-                <div className="xp-flex xp-gap-2 xp-justify-center xp-mt-1">
-                  <button type="submit" disabled={isLoading} className="xp-button primary">
-                    {isLoading ? '...' : (isEditing ? '💾 บันทึก' : '+ เพิ่มประวัติ')}
-                  </button>
-                  <button type="button" onClick={() => { closeWindow('addJob'); setIsEditing(false); setFormData(initialForm); }} className="xp-button">ยกเลิก</button>
-                </div>
-              </form>
-            </div>
-          </XPWindow>
-
-          {/* Mobile Job List */}
-          <XPWindow
-            title="Job Tracker"
-            icon="📁"
-            windowId="main"
-            isMobile={isMobile}
-            windowPositions={windowPositions}
-            activeWindow={activeWindow}
-            onMouseDown={handleMouseDown}
-          >
-            <div className="xp-flex xp-gap-2 xp-mb-2" style={{ padding: '4px 0', borderBottom: '1px solid var(--xp-gray)' }}>
-              <button onClick={() => { setFormData(initialForm); setIsEditing(false); openWindow('addJob'); }} className="xp-button primary" style={{ fontWeight: 'bold', flex: 1 }}>
-                <span style={{ fontSize: '14px', marginRight: '4px' }}>+</span> เพิ่มงาน
-              </button>
-              <button onClick={() => openWindow('stats')} className="xp-button" style={{ flex: 1 }}>
-                📊 สถิติ
-              </button>
-            </div>
-
-            <div className="xp-flex xp-gap-2 xp-mb-2">
-              <input type="text" placeholder="ค้นหา..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="xp-input xp-flex-1" />
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="xp-select" style={{ width: '80px' }}>
-                <option value="newest">ล่าสุด</option>
-                <option value="oldest">เก่าสุด</option>
-                <option value="a-z">A-Z</option>
-              </select>
-            </div>
-
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="xp-select xp-w-full xp-mb-2">
-              <option value="All">📌 ทุกสถานะ</option>
-              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-
-            {isLoading && jobs.length === 0 ? (
-              <div className="xp-loading">
-                <div className="xp-hourglass"></div>
-                <span>กำลังดึงข้อมูล...</span>
-              </div>
-            ) : filteredJobs.length === 0 ? (
-              <div className="xp-list" style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#808080' }}>
-                ยังไม่มีประวัติ
-              </div>
-            ) : (
-              <div className="xp-list xp-scroll" style={{ flexGrow: 1, overflowY: 'auto' }}>
-                {filteredJobs.map((job) => (
-                  <div key={job.id} className="xp-list-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '10px' }}>
-                    <div className="xp-flex xp-justify-between xp-w-full xp-items-center">
-                      <strong style={{ fontSize: '13px' }}>{job.company}</strong>
-                      <div className="xp-flex xp-gap-1">
-                        <button onClick={() => handleEdit(job)} className="xp-button" style={{ padding: '2px 8px', fontSize: '11px' }}>✏️</button>
-                        <button onClick={() => setItemToDelete(job.id)} className="xp-button danger" style={{ padding: '2px 8px', fontSize: '11px' }}>🗑️</button>
+                  <div className="xp-grid-2">
+                    <div className="xp-groupbox" style={{ margin: 0 }}>
+                      <div className="xp-groupbox-title">สถานะ & รูปแบบ</div>
+                      <div className="xp-mb-1">
+                        <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>สถานะ</label>
+                        <select name="status" value={formData.status} onChange={handleChange} className="xp-select xp-w-full">
+                          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>รูปแบบงาน</label>
+                        <select name="workMode" value={formData.workMode} onChange={handleChange} className="xp-select xp-w-full">
+                          {WORK_MODES.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
                       </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#0054E3', fontWeight: 'bold' }}>{job.position}</div>
-                    <div className="xp-flex xp-gap-2 xp-wrap">
-                      <span className={`xp-badge ${STATUS_BADGES[job.status] || 'xp-badge-waiting'}`}>{job.status}</span>
-                      <span className="xp-badge" style={{ background: '#F0F0F0', borderColor: '#808080' }}>{job.workMode}</span>
-                    </div>
-                    <div className="xp-flex xp-gap-3" style={{ fontSize: '11px', color: '#404040' }}>
-                      <span>🗓 {job.date}</span>
-                      {job.salary && job.salary !== 'ไม่ระบุ' && <span>💰 {job.salary}</span>}
-                    </div>
-                    {job.link && <a href={job.link} target="_blank" rel="noopener noreferrer" style={{ color: '#0054E3', fontSize: '11px' }}>🔗 ดูประกาศงาน</a>}
-                    {job.notes && <div style={{ fontSize: '11px', color: '#606060', background: '#F8F8F8', padding: '4px', border: '1px solid #E0E0E0', width: '100%' }}>📝 {job.notes}</div>}
-                    <div className="xp-flex xp-gap-1 xp-mt-1 xp-items-center">
-                      <label style={{ fontSize: '11px' }}>สถานะ:</label>
-                      <select value={job.status} onChange={(e) => handleQuickStatusChange(job.id, e.target.value)} className="xp-select" style={{ fontSize: '11px', padding: '2px 4px', minHeight: '20px' }}>
-                        {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
+
+                    <div className="xp-groupbox" style={{ margin: 0 }}>
+                      <div className="xp-groupbox-title">รายละเอียด</div>
+                      <div className="xp-mb-1">
+                        <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>เงินเดือน</label>
+                        <select name="salary" value={formData.salary} onChange={handleChange} className="xp-select xp-w-full">
+                          {SALARY_RANGES.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>วันที่สมัคร</label>
+                        <input type="date" name="date" value={formData.date} onChange={handleChange} className="xp-input xp-w-full" />
+                      </div>
                     </div>
                   </div>
-                ))}
+
+                  <div className="xp-groupbox">
+                    <div className="xp-groupbox-title">ข้อมูลเพิ่มเติม</div>
+                    <div className="xp-mb-1">
+                      <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>ลิงก์ประกาศงาน</label>
+                      <input type="url" name="link" value={formData.link || ''} onChange={handleChange} className="xp-input xp-w-full" placeholder="https://..." />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', display: 'block', marginBottom: '2px' }}>บันทึกเพิ่มเติม</label>
+                      <textarea name="notes" value={formData.notes || ''} onChange={handleChange} placeholder="เทคโนโลยีที่ใช้, คำถามที่เจอ..." rows="3" className="xp-textarea xp-w-full"></textarea>
+                    </div>
+                  </div>
+
+                  <div className="xp-flex xp-gap-2 xp-justify-center xp-mt-1">
+                    <button type="submit" disabled={isLoading} className="xp-button primary">
+                      {isLoading ? '...' : (isEditing ? '💾 บันทึก' : '+ เพิ่มประวัติ')}
+                    </button>
+                    <button type="button" onClick={() => { closeWindow('addJob'); setIsEditing(false); setFormData(initialForm); }} className="xp-button">ยกเลิก</button>
+                  </div>
+                </form>
               </div>
-            )}
+            </XPWindow>
 
-            <div className="xp-status-bar xp-mt-2" style={{ margin: 'auto -10px -10px -10px', flexShrink: 0 }}>
-              <div className="xp-status-panel">รายการ: {filteredJobs.length} จาก {jobs.length}</div>
-              <div className="xp-status-panel" style={{ flex: '0 0 auto', width: '60px', justifyContent: 'center' }}>Ready</div>
-            </div>
-          </XPWindow>
+            {/* Mobile Job List */}
+            <XPWindow
+              title="Job Tracker"
+              icon="📁"
+              windowId="main"
+              isMobile={isMobile}
+              windowPositions={windowPositions}
+              activeWindow={activeWindow}
+              onMouseDown={handleMouseDown}
+            >
+              <div className="xp-flex xp-gap-2 xp-mb-2" style={{ padding: '4px 0', borderBottom: '1px solid var(--xp-gray)' }}>
+                <button onClick={() => { setFormData(initialForm); setIsEditing(false); openWindow('addJob'); }} className="xp-button primary" style={{ fontWeight: 'bold', flex: 1 }}>
+                  <span style={{ fontSize: '14px', marginRight: '4px' }}>+</span> เพิ่มงาน
+                </button>
+                <button onClick={() => openWindow('stats')} className="xp-button" style={{ flex: 1 }}>
+                  📊 สถิติ
+                </button>
+              </div>
 
-          {/* Mobile Minesweeper */}
-          <XPWindow
-            title="Minesweeper"
-            icon={<SVGIcons.MinesweeperClassic />}
-            width="fit-content"
-            height="auto"
-            windowId="minesweeper"
-            zIndex={10}
-            isMobile={isMobile}
-            windowPositions={windowPositions}
-            activeWindow={activeWindow}
-            onMouseDown={handleMouseDown}
-            winState={windows['minesweeper']}
-            onMinimize={toggleMinimizeWindow}
-            onClose={closeWindow}
-            className="xp-minesweeper-window"
-            disableResize={true}
-            menuBar={
-              <>
-                <div style={{ padding: '2px 4px', cursor: 'pointer' }}><u>G</u>ame</div>
-                <div style={{ padding: '2px 4px', cursor: 'pointer' }}><u>H</u>elp</div>
-              </>
-            }
-          >
-            <Minesweeper />
-          </XPWindow>
-          
+              <div className="xp-flex xp-gap-2 xp-mb-2">
+                <input type="text" placeholder="ค้นหา..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="xp-input xp-flex-1" />
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="xp-select" style={{ width: '80px' }}>
+                  <option value="newest">ล่าสุด</option>
+                  <option value="oldest">เก่าสุด</option>
+                  <option value="a-z">A-Z</option>
+                </select>
+              </div>
+
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="xp-select xp-w-full xp-mb-2">
+                <option value="All">📌 ทุกสถานะ</option>
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+
+              {isLoading && jobs.length === 0 ? (
+                <div className="xp-loading">
+                  <div className="xp-hourglass"></div>
+                  <span>กำลังดึงข้อมูล...</span>
+                </div>
+              ) : filteredJobs.length === 0 ? (
+                <div className="xp-list" style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#808080' }}>
+                  ยังไม่มีประวัติ
+                </div>
+              ) : (
+                <div className="xp-list xp-scroll" style={{ flexGrow: 1, overflowY: 'auto' }}>
+                  {filteredJobs.map((job) => (
+                    <div key={job.id} className="xp-list-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px', padding: '10px' }}>
+                      <div className="xp-flex xp-justify-between xp-w-full xp-items-center">
+                        <strong style={{ fontSize: '13px' }}>{job.company}</strong>
+                        <div className="xp-flex xp-gap-1">
+                          <button onClick={() => handleEdit(job)} className="xp-button" style={{ padding: '2px 8px', fontSize: '11px' }}>✏️</button>
+                          <button onClick={() => setItemToDelete(job.id)} className="xp-button danger" style={{ padding: '2px 8px', fontSize: '11px' }}>🗑️</button>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#0054E3', fontWeight: 'bold' }}>{job.position}</div>
+                      <div className="xp-flex xp-gap-2 xp-wrap">
+                        <span className={`xp-badge ${STATUS_BADGES[job.status] || 'xp-badge-waiting'}`}>{job.status}</span>
+                        <span className="xp-badge" style={{ background: '#F0F0F0', borderColor: '#808080' }}>{job.workMode}</span>
+                      </div>
+                      <div className="xp-flex xp-gap-3" style={{ fontSize: '11px', color: '#404040' }}>
+                        <span>🗓 {job.date}</span>
+                        {job.salary && job.salary !== 'ไม่ระบุ' && <span>💰 {job.salary}</span>}
+                      </div>
+                      {job.link && <a href={job.link} target="_blank" rel="noopener noreferrer" style={{ color: '#0054E3', fontSize: '11px' }}>🔗 ดูประกาศงาน</a>}
+                      {job.notes && <div style={{ fontSize: '11px', color: '#606060', background: '#F8F8F8', padding: '4px', border: '1px solid #E0E0E0', width: '100%' }}>📝 {job.notes}</div>}
+                      <div className="xp-flex xp-gap-1 xp-mt-1 xp-items-center">
+                        <label style={{ fontSize: '11px' }}>สถานะ:</label>
+                        <select value={job.status} onChange={(e) => handleQuickStatusChange(job.id, e.target.value)} className="xp-select" style={{ fontSize: '11px', padding: '2px 4px', minHeight: '20px' }}>
+                          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="xp-status-bar xp-mt-2" style={{ margin: 'auto -10px -10px -10px', flexShrink: 0 }}>
+                <div className="xp-status-panel">รายการ: {filteredJobs.length} จาก {jobs.length}</div>
+                <div className="xp-status-panel" style={{ flex: '0 0 auto', width: '60px', justifyContent: 'center' }}>Ready</div>
+              </div>
+            </XPWindow>
+
+            {/* Mobile Minesweeper */}
+            <XPWindow
+              title="Minesweeper"
+              icon={<SVGIcons.MinesweeperClassic />}
+              width="fit-content"
+              height="auto"
+              windowId="minesweeper"
+              zIndex={10}
+              isMobile={isMobile}
+              windowPositions={windowPositions}
+              activeWindow={activeWindow}
+              onMouseDown={handleMouseDown}
+              winState={windows['minesweeper']}
+              onMinimize={toggleMinimizeWindow}
+              onClose={closeWindow}
+              className="xp-minesweeper-window"
+              disableResize={true}
+              menuBar={
+                <>
+                  <div style={{ padding: '2px 4px', cursor: 'pointer' }}><u>G</u>ame</div>
+                  <div style={{ padding: '2px 4px', cursor: 'pointer' }}><u>H</u>elp</div>
+                </>
+              }
+            >
+              <Minesweeper />
+            </XPWindow>
+
           </div>
         </div>
       ) : (
@@ -1458,128 +1465,128 @@ export default function App() {
           {/* Taskbar */}
           {/* 🚀 Start Menu Overlay (คลิกที่อื่นเพื่อปิดเมนู) */}
           {isStartMenuOpen && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 9998 }} onClick={() => setIsStartMenuOpen(false)}></div>
-      )}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 9998 }} onClick={() => setIsStartMenuOpen(false)}></div>
+          )}
 
-      {/* 🚀 Start Menu Panel */}
-      {isStartMenuOpen && (
-        <div className="xp-start-menu">
-          <div className="xp-start-menu-header">
-            <div className="xp-start-user-icon">👤</div>
-            <span style={{ fontSize: '14px' }}>{session.user?.email?.split('@')[0] || 'Administrator'}</span>
-          </div>
-          <div className="xp-start-menu-body">
-            <div className="xp-start-menu-left">
-              <div style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 'bold' }}>Programs</div>
-              <div className="xp-start-divider"></div>
-              <div className="xp-start-item" onClick={() => { openWindow('main'); setIsStartMenuOpen(false); }}>
-                <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.Folder /></div>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>Job Tracker</div>
-                  <div style={{ color: '#808080', fontSize: '10px' }}>Manage job applications</div>
+          {/* 🚀 Start Menu Panel */}
+          {isStartMenuOpen && (
+            <div className="xp-start-menu">
+              <div className="xp-start-menu-header">
+                <div className="xp-start-user-icon">👤</div>
+                <span style={{ fontSize: '14px' }}>{session.user?.email?.split('@')[0] || 'Administrator'}</span>
+              </div>
+              <div className="xp-start-menu-body">
+                <div className="xp-start-menu-left">
+                  <div style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 'bold' }}>Programs</div>
+                  <div className="xp-start-divider"></div>
+                  <div className="xp-start-item" onClick={() => { openWindow('main'); setIsStartMenuOpen(false); }}>
+                    <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.Folder /></div>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>Job Tracker</div>
+                      <div style={{ color: '#808080', fontSize: '10px' }}>Manage job applications</div>
+                    </div>
+                  </div>
+                  <div className="xp-start-item" onClick={() => { openWindow('addJob'); setIsStartMenuOpen(false); }}>
+                    <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.AddDocument /></div>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>Add New Job</div>
+                      <div style={{ color: '#808080', fontSize: '10px' }}>Create a new record</div>
+                    </div>
+                  </div>
+                  <div className="xp-start-item" onClick={() => { openWindow('stats'); setIsStartMenuOpen(false); }}>
+                    <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.BarChart /></div>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>Statistics</div>
+                      <div style={{ color: '#808080', fontSize: '10px' }}>View job insights</div>
+                    </div>
+                  </div>
+                  <div className="xp-start-item" onClick={() => { openWindow('minesweeper'); setIsStartMenuOpen(false); }}>
+                    <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.Minesweeper /></div>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>Minesweeper</div>
+                      <div style={{ color: '#808080', fontSize: '10px' }}>Play mini-game</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="xp-start-menu-right">
+                  <div className="xp-start-item"><b>My Documents</b></div>
+                  <div className="xp-start-item"><b>My Recent Documents</b></div>
+                  <div className="xp-start-item"><b>My Pictures</b></div>
+                  <div className="xp-start-item"><b>My Music</b></div>
+                  <div className="xp-start-item"><b>My Computer</b></div>
+                  <div className="xp-start-divider"></div>
+                  <div className="xp-start-item">Control Panel</div>
+                  <div className="xp-start-item">Printers and Faxes</div>
+                  <div className="xp-start-divider"></div>
+                  <div className="xp-start-item">Help and Support</div>
+                  <div className="xp-start-item">Search</div>
+                  <div className="xp-start-item">Run...</div>
                 </div>
               </div>
-              <div className="xp-start-item" onClick={() => { openWindow('addJob'); setIsStartMenuOpen(false); }}>
-                <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.AddDocument /></div>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>Add New Job</div>
-                  <div style={{ color: '#808080', fontSize: '10px' }}>Create a new record</div>
-                </div>
-              </div>
-              <div className="xp-start-item" onClick={() => { openWindow('stats'); setIsStartMenuOpen(false); }}>
-                <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.BarChart /></div>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>Statistics</div>
-                  <div style={{ color: '#808080', fontSize: '10px' }}>View job insights</div>
-                </div>
-              </div>
-              <div className="xp-start-item" onClick={() => { openWindow('minesweeper'); setIsStartMenuOpen(false); }}>
-                <div style={{ width: '24px', height: '24px', marginRight: '8px' }}><SVGIcons.Minesweeper /></div>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>Minesweeper</div>
-                  <div style={{ color: '#808080', fontSize: '10px' }}>Play mini-game</div>
-                </div>
+              <div className="xp-start-menu-footer">
+                <button className="xp-start-footer-btn" onClick={handleLogout}>
+                  <div className="xp-logout-icon">🔑</div>
+                  <span>Log Off</span>
+                </button>
+                <button className="xp-start-footer-btn" onClick={() => setIsStartMenuOpen(false)}>
+                  <div className="xp-shutdown-icon">⏻</div>
+                  <span>Turn Off Computer</span>
+                </button>
               </div>
             </div>
-            <div className="xp-start-menu-right">
-              <div className="xp-start-item"><b>My Documents</b></div>
-              <div className="xp-start-item"><b>My Recent Documents</b></div>
-              <div className="xp-start-item"><b>My Pictures</b></div>
-              <div className="xp-start-item"><b>My Music</b></div>
-              <div className="xp-start-item"><b>My Computer</b></div>
-              <div className="xp-start-divider"></div>
-              <div className="xp-start-item">Control Panel</div>
-              <div className="xp-start-item">Printers and Faxes</div>
-              <div className="xp-start-divider"></div>
-              <div className="xp-start-item">Help and Support</div>
-              <div className="xp-start-item">Search</div>
-              <div className="xp-start-item">Run...</div>
-            </div>
-          </div>
-          <div className="xp-start-menu-footer">
-            <button className="xp-start-footer-btn" onClick={handleLogout}>
-              <div className="xp-logout-icon">🔑</div>
-              <span>Log Off</span>
-            </button>
-            <button className="xp-start-footer-btn" onClick={() => setIsStartMenuOpen(false)}>
-              <div className="xp-shutdown-icon">⏻</div>
-              <span>Turn Off Computer</span>
-            </button>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* 🚀 Classic XP Taskbar */}
-      <div className="xp-taskbar">
-        <button
-          className={`xp-start-button ${isStartMenuOpen ? 'active' : ''}`}
-          onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
-        >
-          <div className="xp-start-icon">
-            {/* โลโก้ Windows SVG แท้ */}
-            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width="16" height="16"><path fill='#F65314' d='M2 3h5v5H2z' /><path fill='#7CBB00' d='M8 3h6v5H8z' /><path fill='#00A1F1' d='M2 9h5v5H2z' /><path fill='#FFBB00' d='M8 9h6v5H8z' /></svg>
-          </div>
-          {/* ตัวอักษร start เอียงและหนา เหมือนของจริงเป๊ะ */}
-          <span style={{ fontStyle: 'italic', fontWeight: 'bold', fontSize: '16px', fontFamily: '"Franklin Gothic Medium", Arial, sans-serif' }}>start</span>
-        </button>
-
-        {/* กล่องแสดงโปรแกรมที่กำลังเปิดอยู่ (Task Buttons) */}
-        <div className="xp-task-buttons">
-          {Object.entries(windows).filter(([_, state]) => state.isOpen).map(([id, state]) => (
-            <div
-              key={id}
-              className={`xp-task-button ${activeWindow === id && !state.isMinimized ? 'active' : ''}`}
-              onClick={() => {
-                if (activeWindow === id && !state.isMinimized) {
-                  toggleMinimizeWindow(id);
-                } else {
-                  setWindows(prev => ({ ...prev, [id]: { ...prev[id], isMinimized: false } }));
-                  setActiveWindow(id);
-                }
-              }}
+          {/* 🚀 Classic XP Taskbar */}
+          <div className="xp-taskbar">
+            <button
+              className={`xp-start-button ${isStartMenuOpen ? 'active' : ''}`}
+              onClick={() => setIsStartMenuOpen(!isStartMenuOpen)}
             >
-              <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {state.icon}
+              <div className="xp-start-icon">
+                {/* โลโก้ Windows SVG แท้ */}
+                <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width="16" height="16"><path fill='#F65314' d='M2 3h5v5H2z' /><path fill='#7CBB00' d='M8 3h6v5H8z' /><path fill='#00A1F1' d='M2 9h5v5H2z' /><path fill='#FFBB00' d='M8 9h6v5H8z' /></svg>
               </div>
-              {state.title}
-            </div>
-          ))}
-        </div>
+              {/* ตัวอักษร start เอียงและหนา เหมือนของจริงเป๊ะ */}
+              <span style={{ fontStyle: 'italic', fontWeight: 'bold', fontSize: '16px', fontFamily: '"Franklin Gothic Medium", Arial, sans-serif' }}>start</span>
+            </button>
 
-        {/* แถบนาฬิกาขวาสุด (System Tray) */}
-        <div className="xp-system-tray">
-          <span>🔊</span>
-          <span>{clock.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>
-        </div>
-      </div>
+            {/* กล่องแสดงโปรแกรมที่กำลังเปิดอยู่ (Task Buttons) */}
+            <div className="xp-task-buttons">
+              {Object.entries(windows).filter(([_, state]) => state.isOpen).map(([id, state]) => (
+                <div
+                  key={id}
+                  className={`xp-task-button ${activeWindow === id && !state.isMinimized ? 'active' : ''}`}
+                  onClick={() => {
+                    if (activeWindow === id && !state.isMinimized) {
+                      toggleMinimizeWindow(id);
+                    } else {
+                      setWindows(prev => ({ ...prev, [id]: { ...prev[id], isMinimized: false } }));
+                      setActiveWindow(id);
+                    }
+                  }}
+                >
+                  <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {state.icon}
+                  </div>
+                  {state.title}
+                </div>
+              ))}
+            </div>
+
+            {/* แถบนาฬิกาขวาสุด (System Tray) */}
+            <div className="xp-system-tray">
+              <span>🔊</span>
+              <span>{clock.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          </div>
         </>
       )}
-      
+
       {balloon.visible && (
-        <XPBalloon 
-          title={balloon.title} 
-          message={balloon.message} 
-          onClose={() => setBalloon(prev => ({ ...prev, visible: false }))} 
+        <XPBalloon
+          title={balloon.title}
+          message={balloon.message}
+          onClose={() => setBalloon(prev => ({ ...prev, visible: false }))}
         />
       )}
     </div>

@@ -575,6 +575,9 @@ body {
   flex: 1;
   padding: 10px;
   background: var(--xp-window-bg);
+  overflow-y: auto;
+  max-height: calc(100dvh - 70px);
+  padding-bottom: 40px;
 }
 
 /* --- XP Buttons --- */
@@ -1295,7 +1298,138 @@ body {
 /* =========================================================
    MOBILE RESPONSIVE (max-width: 768px)
    ========================================================= */
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
+    body {
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .xp-desktop {
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .xp-mobile-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 8px;
+      padding-bottom: 50px;
+      -webkit-overflow-scrolling: touch;
+      height: calc(100vh - 36px);
+    }
+
+    /* Hide desktop icons */
+    .xp-desktop-icons {
+      display: none !important;
+    }
+
+    /* Mobile Windows - Full width stacked */
+    .xp-window-mobile {
+      width: 100% !important;
+      margin-bottom: 10px;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .xp-title-bar-mobile {
+      height: 36px;
+      font-size: 14px;
+      padding: 0 10px;
+    }
+
+    .xp-window-content-mobile {
+      padding: 12px;
+    }
+
+    /* Mobile Inputs - Larger touch targets */
+    .xp-input,
+    .xp-select,
+    .xp-textarea {
+      padding: 10px 12px;
+      font-size: 16px;
+      /* Prevent iOS zoom */
+      min-height: 44px;
+    }
+
+    .xp-select {
+      height: 44px;
+    }
+
+    /* Mobile Buttons - Larger touch targets */
+    .xp-button {
+      padding: 10px 16px;
+      min-height: 44px;
+      font-size: 14px;
+    }
+
+    /* Mobile Grid - Stack on small screens */
+    .xp-grid-2 {
+      grid-template-columns: 1px;
+      gap: 6px;
+    }
+
+    /* ----- XP Welcome Screen Mobile Overrides ----- */
+    .xp-welcome-center {
+      flex-direction: column !important;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .xp-welcome-left-side {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      margin-bottom: 30px;
+      width: 100%;
+    }
+
+    .xp-welcome-left-side .xp-welcome-logo {
+      margin-bottom: 12px;
+    }
+
+    .xp-welcome-left-side > div:last-child {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .xp-welcome-divider-v {
+      display: none;
+    }
+
+    .xp-welcome-right-side {
+      width: 100%;
+      align-items: center;
+    }
+
+    .xp-welcome-user-card {
+      width: 85%;
+      max-width: 350px;
+      margin: 0 auto;
+    }
+
+    .xp-welcome-switch-btn {
+      margin-top: 16px;
+    }
+
+    .xp-welcome-bottom {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      left: 0;
+    }
+
+    /* Prevent text selection on mobile */
+    .xp-title-bar-mobile,
+    .xp-start-button,
+    .xp-button {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
   body {
     overflow: hidden;
     height: 100vh;
@@ -1464,14 +1598,123 @@ body {
     padding: 20px;
   }
 
-  /* Mobile Login */
-  .xp-login-box {
-    padding: 24px 16px;
-    max-width: 100%;
+  /* Mobile Login - Welcome Screen Overhaul */
+  .xp-login-screen {
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
   }
 
-  .xp-login-title {
-    font-size: 20px;
+  .xp-welcome-top {
+    height: 60px;
+    padding: 8px 16px;
+  }
+
+  .xp-welcome-center {
+    flex-direction: column !important;
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  .xp-welcome-left-side {
+    align-items: center;
+    padding-right: 0;
+    padding-bottom: 12px;
+    flex: 0 0 auto;
+  }
+
+  .xp-welcome-left-side .xp-welcome-logo {
+    justify-content: center;
+  }
+
+  .xp-welcome-left-side > div:last-child {
+    text-align: center;
+    font-size: 14px !important;
+    margin-top: 8px !important;
+  }
+
+  .xp-welcome-divider-v {
+    display: none;
+  }
+
+  .xp-welcome-right-side {
+    align-items: center;
+    padding-left: 0;
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .xp-welcome-user-card {
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 320px;
+    padding: 24px 20px;
+    gap: 12px;
+  }
+
+  .xp-welcome-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .xp-welcome-avatar svg {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  .xp-welcome-user-name {
+    text-align: center;
+    font-size: 20px !important;
+  }
+
+  .xp-welcome-user-info {
+    width: 100%;
+    align-items: center;
+  }
+
+  .xp-welcome-form {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    width: 100%;
+  }
+
+  .xp-welcome-password-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .xp-welcome-input {
+    min-height: 44px !important;
+    font-size: 16px !important;
+    padding: 10px 12px !important;
+    border: 2px inset #ffffff !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .xp-welcome-btn-primary {
+    width: 100% !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+    border-radius: 6px;
+  }
+
+  .xp-welcome-switch-btn {
+    margin-top: 16px;
+    font-size: 14px;
+  }
+
+  .xp-welcome-bottom {
+    height: 70px;
+    padding: 0 16px;
+    flex-direction: row;
+  }
+
+  .xp-welcome-bottom > div:last-child {
+    font-size: 10px !important;
   }
 
   /* Prevent text selection on mobile */
@@ -1606,6 +1849,20 @@ body {
 
 .xp-welcome-input:focus {
   border-color: #F37021;
+}
+
+.xp-welcome-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.xp-welcome-password-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
 }
 
 .xp-welcome-btn-primary {
